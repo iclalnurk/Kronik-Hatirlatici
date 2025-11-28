@@ -1,0 +1,38 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# Android / Gradle
+.gradle/
+build/
+**/build/
+local.properties
+*.keystore
+
+# Android emulator / images
+*.img
+*.qcow2
+*.bin
+*.lock
+.avd/
+.android/
+
+# React Native
+android/app/build/
+ios/Pods/
+ios/build/
+
+# Misc
+*.log
+dist/
+temp/
