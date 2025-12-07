@@ -1,32 +1,85 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useContext } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
-import { auth } from '../../firebase'; 
+import { auth, db, appId } from '../../firebase';
+import { FontContext } from './context/FontContext';
 
 const COLORS = {
-  background: '#D3E4DA', 
-  textPrimary: '#3C3C3C', 
-  buttonPrimary: '#38B07D', 
+  background: '#D3E4DA',
+  textPrimary: '#3C3C3C',
+  buttonPrimary: '#38B07D',
   white: '#FFFFFF',
-  secondary: '#96BFE7', 
+  secondary: '#96BFE7',
 };
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const { fontSize } = useContext(FontContext);
+
   const [loading, setLoading] = useState(true);
-  const [currentUserEmail, setCurrentUserEmail] = useState('...');
+  const [userFullName, setUserFullName] = useState('...');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setLoading(false);
-      if (user && !user.isAnonymous) {
-        setCurrentUserEmail(user.email || user.uid);
-      } else {
+      if (!user || user.isAnonymous) {
+        setLoading(false);
         navigation.replace('LoginScreen');
+        return;
       }
+
+      const fetchProfile = async () => {
+        try {
+          const userDocRef = doc(
+            db,
+            'artifacts',
+            appId,
+            'users',
+            user.uid,
+            'users',
+            user.uid
+          );
+
+          const snap = await getDoc(userDocRef);
+
+          if (snap.exists()) {
+            const data = snap.data();
+            const nameFromDb = data?.fullName;
+            const fallbackName =
+              nameFromDb ||
+              (user.email ? user.email.split('@')[0] : user.uid);
+
+            setUserFullName(fallbackName);
+          } else {
+            const fallbackName =
+              user.email ? user.email.split('@')[0] : user.uid;
+            setUserFullName(fallbackName);
+          }
+        } catch (err) {
+          console.error('Kullanıcı profili alınırken hata:', err);
+          const fallbackName =
+            auth.currentUser?.email
+              ? auth.currentUser.email.split('@')[0]
+              : auth.currentUser?.uid || 'Kullanıcı';
+          setUserFullName(fallbackName);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchProfile();
     });
+
     return unsubscribe;
   }, [navigation]);
 
@@ -35,9 +88,13 @@ export default function HomeScreen() {
       await signOut(auth);
       navigation.replace('LoginScreen');
     } catch (error) {
-      console.error("Çıkış yapma hatası:", error);
-      Alert.alert("Hata", "Oturum kapatılamadı. Tekrar deneyin.");
+      console.error('Çıkış yapma hatası:', error);
+      Alert.alert('Hata', 'Oturum kapatılamadı. Tekrar deneyin.');
     }
+  };
+
+  const goToSettings = () => {
+    navigation.navigate('SettingsScreen');
   };
 
   if (loading) {
@@ -50,14 +107,31 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Hoş Geldiniz!</Text>
-      <Text style={styles.subtitle}>
-        {currentUserEmail} hesabı ile giriş yaptınız.
+      {/* Sağ üstte ayarlar simgesi */}
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity style={styles.settingsButton} onPress={goToSettings}>
+          <Ionicons
+            name="settings-outline"
+            size={22}
+            color={COLORS.textPrimary}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <Text style={[styles.title, { fontSize: fontSize + 12 }]}>
+        Hoş Geldiniz!
       </Text>
-      
+
+      <Text style={[styles.subtitle, { fontSize }]}>
+        {userFullName} hesabı ile giriş yaptınız.
+      </Text>
+
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Sağlık Ajandası</Text>
-        <Text style={styles.cardText}>
+        <Text style={[styles.cardTitle, { fontSize: fontSize + 4 }]}>
+          Sağlık Ajandası
+        </Text>
+        <Text style={[styles.cardText, { fontSize }]}>
           Kronik hatırlatıcılarınızı yönetmeye hazırsınız.
         </Text>
       </View>
@@ -66,7 +140,7 @@ export default function HomeScreen() {
         style={[styles.button, styles.signOutButton]}
         onPress={handleSignOut}
       >
-        <Text style={styles.buttonText}>Çıkış Yap</Text>
+        <Text style={[styles.buttonText, { fontSize }]}>Çıkış Yap</Text>
       </TouchableOpacity>
     </View>
   );
@@ -86,14 +160,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.background,
   },
+  headerRow: {
+    position: 'absolute',
+    top: 40,
+    right: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  settingsButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.white + '80',
+  },
   title: {
-    fontSize: 32,
     fontWeight: 'bold',
     color: COLORS.textPrimary,
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
     color: COLORS.textPrimary,
     marginBottom: 40,
     textAlign: 'center',
@@ -111,13 +196,11 @@ const styles = StyleSheet.create({
     marginBottom: 50,
   },
   cardTitle: {
-    fontSize: 22,
     fontWeight: 'bold',
     color: COLORS.buttonPrimary,
     marginBottom: 10,
   },
   cardText: {
-    fontSize: 16,
     color: COLORS.textPrimary,
   },
   button: {
@@ -131,7 +214,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: COLORS.white,
-    fontSize: 16,
     fontWeight: '700',
   },
 });
