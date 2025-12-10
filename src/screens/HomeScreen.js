@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   Alert,
+  Button,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -14,6 +15,25 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { auth, db, appId } from '../../firebase';
 import { FontContext } from './context/FontContext';
+//React Native → (HTTP) → server.js → Twilio → WhatsApp
+const sendWhatsapp = async () => {
+  try {
+const response = await fetch(
+  "https://marivel-unframeable-nonhygroscopically.ngrok-free.dev/send-whatsapp",
+  {      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: "+905530795838", // kendi numaran
+        text: "React Native üzerinden deneme mesajı 📲",
+      }),
+    });
+
+    const data = await response.json();
+    console.log("API yanıtı:", data);
+  } catch (err) {
+    console.log("Hata:", err);
+  }
+};
 
 const COLORS = {
   background: '#D3E4DA',
@@ -107,6 +127,8 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+    <Button title="WhatsApp Gönder" onPress={sendWhatsapp} />
+
       {/* Sağ üstte ayarlar simgesi */}
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }} />
