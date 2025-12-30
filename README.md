@@ -35,6 +35,10 @@ Bu proje aşağıdaki teknolojiler kullanılarak geliştirilmiştir:
 
 
 ---
+## Projenin Görünümü
+<img width="397" height="853" alt="image" src="https://github.com/user-attachments/assets/4ec7b5bb-a0d9-4949-b4ec-48699781e9db" />
+<img width="405" height="856" alt="image" src="https://github.com/user-attachments/assets/1a86a704-df70-4541-af94-b3e4a612e3f8" />
+
 
 ## 🚀 Kurulum & Çalıştırma
 
@@ -59,3 +63,6 @@ npm start
 ├── .gitignore
 ├── package.json
 └── README.md
+
+
+
